@@ -52,26 +52,67 @@ class _ModularFormState extends State<ModularForm> {
   int? result1, result2, combinedResult;
 
   void _calculate() {
-    int x1 = int.parse(x1Controller.text);
-    int x2 = int.parse(x2Controller.text);
-    int e = int.parse(eController.text);
-    int m = int.parse(mController.text);
-    debugPrint('x1: $x1, x2: $x2, e: $e, m: $m');
+    BigInt x1 = BigInt.parse(x1Controller.text);
+    BigInt x2 = BigInt.parse(x2Controller.text);
+    BigInt e = BigInt.parse(eController.text);
+    BigInt m = BigInt.parse(mController.text);
+
     setState(() {
-      num base1 = pow(x1, e) % m;
-      num base2 = pow(x2, e) % m;
+      BigInt base1 = x1.modPow(e, m);
+      BigInt base2 = x2.modPow(e, m);
       result1 = base1.toInt();
       result2 = base2.toInt();
-      combinedResult = (pow((x1 * x2) % m, e) % m.toInt()) as int?;
+      combinedResult = ((x1 * x2) % m).modPow(e, m).toInt();
     });
   }
 
   void _generateKey() {
-    Random rand = Random();
+    int p = _findPrime(50, 100);
+    int q = _findPrime(50, 100);
+    BigInt m = BigInt.from(p) * BigInt.from(q);
+    int phi = (p - 1) * (q - 1);
+    int e = _findCoPrime(phi);
+
     setState(() {
-      eController.text = (rand.nextInt(10) + 2).toString(); // Simple random exponent
-      mController.text = (rand.nextInt(100) + 3).toString(); // Simple random modulus
+      eController.text = e.toString();
+      mController.text = m.toString();
     });
+  }
+
+  bool _isPrime(int number) {
+    for (int i = 2; i <= sqrt(number); i++) {
+      if (number % i == 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  int _findPrime(int start, int end) {
+    Random rand = Random();
+    int candidate = start + rand.nextInt(end - start);
+    while (!_isPrime(candidate)) {
+      candidate = start + rand.nextInt(end - start);
+    }
+    return candidate;
+  }
+
+  int _findCoPrime(int number) {
+    Random rand = Random();
+    int candidate = 2 + rand.nextInt(number - 2); // e must be between 2 and phi-1
+    while (_gcd(candidate, number) != 1) {
+      candidate = 2 + rand.nextInt(number - 2);
+    }
+    return candidate;
+  }
+
+  int _gcd(int a, int b) {
+    while (b != 0) {
+      int t = b;
+      b = a % b;
+      a = t;
+    }
+    return a;
   }
 
   @override
